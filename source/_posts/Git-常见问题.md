@@ -3,7 +3,6 @@ title: Git 常见问题
 date: 2021-11-04 02:14:34
 tags:
 ---
-# Git的常见操作
 
 - 合并最近两次提交为一次
 
@@ -13,6 +12,7 @@ git reset --soft HEAD^^
 # 重新提交
 git commit -m "commit"
 ```
+<!--more-->
 
 - 删除仓库里的文件(包括index)但工作区保留，即从仓库里移除不该提交的文件
 
