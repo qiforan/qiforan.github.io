@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="线程管理线程管理的基础每个程序至少有一个线程：执行 main() 函数的(原始)线程。其余线程有其各自的入口函数。 使用 C++ 线程库启动线程，可以归结为构造 std::thread 对象： 12void do_some_work();std::thread my_thread(do_some_work);  使用 std::thread 类需引入 &lt;thread&gt; 头文件。除了函数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++并发(一)">
+<meta property="og:url" content="http://example.com/2021/10/29/C-%E5%B9%B6%E5%8F%91/index.html">
+<meta property="og:site_name" content="小楼新晴">
+<meta property="og:description" content="线程管理线程管理的基础每个程序至少有一个线程：执行 main() 函数的(原始)线程。其余线程有其各自的入口函数。 使用 C++ 线程库启动线程，可以归结为构造 std::thread 对象： 12void do_some_work();std::thread my_thread(do_some_work);  使用 std::thread 类需引入 &lt;thread&gt; 头文件。除了函数">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-10-29T15:46:32.000Z">
+<meta property="article:modified_time" content="2021-11-15T13:16:25.363Z">
+<meta property="article:author" content="qiforan">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/10/29/C-%E5%B9%B6%E5%8F%91/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>C++并发(一) | 小楼新晴</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小楼新晴</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/29/C-%E5%B9%B6%E5%8F%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="qiforan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小楼新晴">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C++并发(一)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-10-29 23:46:32" itemprop="dateCreated datePublished" datetime="2021-10-29T23:46:32+08:00">2021-10-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-11-15 21:16:25" itemprop="dateModified" datetime="2021-11-15T21:16:25+08:00">2021-11-15</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="线程管理"><a href="#线程管理" class="headerlink" title="线程管理"></a>线程管理</h2><h3 id="线程管理的基础"><a href="#线程管理的基础" class="headerlink" title="线程管理的基础"></a>线程管理的基础</h3><p>每个程序至少有一个线程：执行 <code>main()</code> 函数的(原始)线程。其余线程有其各自的入口函数。</p>
+<p>使用 C++ 线程库启动线程，可以归结为构造 <code>std::thread</code> 对象：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">do_some_work</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function">std::thread <span class="title">my_thread</span><span class="params">(do_some_work)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>std::thread</code> 类需引入 <code>&lt;thread&gt;</code> 头文件。除了函数，<code>std::thread</code> 也可用其他 <strong>可调用类型</strong> 构造。</p>
+<p>启动线程后，需要明确是要等待线程结束，<span id="more"></span>还是让其自主运行。</p>
+<h4 id="线程等待"><a href="#线程等待" class="headerlink" title="线程等待"></a>线程等待</h4><p>如果要等待子线程结束，相关的 <code>std::thread</code> 实例需要使用 <code>join()</code>，此时调用线程处于阻塞模式。</p>
+<p><code>join()</code> 执行完成之后，底层线程 id 被设置为0，即 <code>joinable()</code> 变为 <code>false</code>。同时会清理线程相关的存储部分， 这样 <code>std::thread</code> 对象将不再与已经底层线程有任何关联。这意味着，只能对一个线程使用一次 <code>join()</code>;再次调用 <code>join()</code>，将返回 <code>false</code>。</p>
+<p>如果不等待线程，就必须保证线程结束之前，可访问的数据的 <strong>有效性</strong>。很可能线程还没结束，函数已经退出，这时线程函数还持有函数局部变量的指针或引用。下面的代码就展示了这样的一种情况。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">func</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">int</span>&amp; i;</span><br><span class="line">  <span class="built_in">func</span>(<span class="keyword">int</span>&amp; i_) : <span class="built_in">i</span>(i_) &#123;&#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">operator</span><span class="params">()</span> <span class="params">()</span></span></span><br><span class="line"><span class="function">  </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> j=<span class="number">0</span> ; j&lt;<span class="number">1000000</span> ; ++j)</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="built_in">do_something</span>(i);           <span class="comment">// 1 潜在访问隐患：悬空引用</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">oops</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> some_local_state=<span class="number">0</span>;</span><br><span class="line">  <span class="function">func <span class="title">my_func</span><span class="params">(some_local_state)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">my_thread</span><span class="params">(my_func)</span></span>;</span><br><span class="line">  my_thread.<span class="built_in">detach</span>();          <span class="comment">// 2 不等待线程结束</span></span><br><span class="line">&#125;                              <span class="comment">// 3 新线程可能还在运行</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="线程分离"><a href="#线程分离" class="headerlink" title="线程分离"></a>线程分离</h4><p><code>std::thread</code> 实例对象调用 <code>detach()</code> 会导致线程分离。</p>
+<p>分离子线程意味着与当前线程的连接被断开，子线程成为后台线程，被 C++ 运行时库接管。这意味着不可能再有 <code>std::thread</code> 对象能引用到子线程了。与 <code>join</code> 一样，<code>detach</code> 也只能调用一次，当 <code>detach</code> 以后其 <code>joinable()</code> 为 <code>false</code>。</p>
+<h4 id="std-thread-析构"><a href="#std-thread-析构" class="headerlink" title="std::thread 析构"></a><code>std::thread</code> 析构</h4><p><code>std::thread</code> 对象析构时，会先判断 <code>joinable()</code>，如果可联结，则程序会直接被终止（调用<code>std::terminate()</code>）。</p>
+<p>联结状态：一个 <code>std::thread</code> 对象只可能处于可联结或不可联结两种状态之一。可用 <code>joinable()</code> 函数来判断，即 <code>std::thread</code> 对象是否与某个有效的底层线程关联（内部通过判断线程 id 是否为 0 来实现）。</p>
+<ul>
+<li>可联结(joinable)<ul>
+<li>当线程可运行、己运行或处于阻塞时是可联结的。注意，如果某个底层线程已经执行完任务，但是没有被 join 的话，该线程依然会被认为是一个活动的执行线程，仍然处于 joinable 状态。</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>不可联结（unjoinable)<ul>
+<li>当不带参构造的 <code>std::thread</code> 对象为不可联结，因为底层线程还没创建。</li>
+<li>己移动的 <code>std::thread</code> 对象为不可联结。因为该对象的底层线程 id 已被设置为 0。</li>
+<li>己调用 join 或 detach 的对象为不可联结状态。因为调用 <code>join()</code> 以后，底层线程己结束，而 <code>detach()</code> 会把<code>std::thread</code> 对象和对应的底层线程之间的连接断开。</li>
+</ul>
+</li>
+</ul>
+<h3 id="传递线程参数"><a href="#传递线程参数" class="headerlink" title="传递线程参数"></a>传递线程参数</h3><p>向 <code>std::thread</code> 构造函数中的可调用对象，或函数传递一个参数很简单。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(<span class="keyword">int</span> i, std::string <span class="keyword">const</span>&amp; s)</span></span>;</span><br><span class="line"><span class="function">std::thread <span class="title">t</span><span class="params">(f, <span class="number">3</span>, <span class="string">&quot;hello&quot;</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>需要特别要注意，当指向动态变量的指针作为参数传递给线程的情况，代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(<span class="keyword">int</span> i,std::string <span class="keyword">const</span>&amp; s)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">oops</span><span class="params">(<span class="keyword">int</span> some_param)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> buffer[<span class="number">1024</span>]; <span class="comment">// 1</span></span><br><span class="line">  <span class="built_in">sprintf</span>(buffer, <span class="string">&quot;%i&quot;</span>,some_param);</span><br><span class="line">  <span class="function">std::thread <span class="title">t</span><span class="params">(f,<span class="number">3</span>,buffer)</span></span>; <span class="comment">// 2</span></span><br><span class="line">  t.<span class="built_in">detach</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>不能保证构造函数结束时新线程已经执行，只能保证构造函数完成时线程被安排执行，所以可能 <code>f</code> 函数开始执行时，<code>oops</code> 函数已退出。</p>
+<p>参考：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/17655880/stdthread-construction-and-execution">std::thread construction and execution</a></p>
+<p>解决方案就是在传递到 <code>std::thread</code> 构造函数之前就将字面值转化为 <code>std::string</code> 对象。</p>
+<p>还可能遇到相反的情况：期望传递一个非常量引用(但这不会被编译)，但整个对象被复制了。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">update_data_for_widget</span><span class="params">(widget_id w,widget_data&amp; data)</span></span>; <span class="comment">// 1</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">oops_again</span><span class="params">(widget_id w)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  widget_data data;</span><br><span class="line">  <span class="function">std::thread <span class="title">t</span><span class="params">(update_data_for_widget,w,data)</span></span>; <span class="comment">// 2</span></span><br><span class="line">  <span class="built_in">display_status</span>();</span><br><span class="line">  t.<span class="built_in">join</span>();</span><br><span class="line">  <span class="built_in">process_widget_data</span>(data);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解决办法是：使用 <code>std::ref</code> 将参数转换成引用的形式，从而可将线程的调用改为以下形式：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::thread <span class="title">t</span><span class="params">(update_data_for_widget,w,std::ref(data))</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>std::thread</code> 的传参类似 <code>std::bind</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">X</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">do_lengthy_work</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line">X my_x;</span><br><span class="line"><span class="function">std::thread <span class="title">t</span><span class="params">(&amp;X::do_lengthy_work,&amp;my_x)</span></span>; <span class="comment">// 1</span></span><br></pre></td></tr></table></figure>
+
+<p>这段代码中，新线程将 <code>my_x.do_lengthy_work()</code> 作为线程函数；<code>my_x</code> 的地址①作为指针对象提供给函数。也可以为成员函数提供参数：<code>std::thread</code> 构造函数的第三个参数就是成员函数的第一个参数，以此类推。</p>
+<h3 id="std-thread-移动"><a href="#std-thread-移动" class="headerlink" title="std::thread 移动"></a><code>std::thread</code> 移动</h3><p>每个 <code>std::thread</code> 实例都负责管理一个执行线程。执行线程的所有权可以在多个 <code>std::thread</code> 实例中互相转移，这是依赖于 <code>std::thread</code> 实例的可移动且不可复制性。不可复制保性证了在同一时间点，一个 <code>std::thread</code> 实例只能关联一个执行线程；可移动性使得开发者可以自己决定，哪个实例拥有实际执行线程的所有权。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">some_function</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">some_other_function</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function">std::thread <span class="title">t1</span><span class="params">(some_function)</span></span>;            <span class="comment">// 1</span></span><br><span class="line">std::thread t2=std::<span class="built_in">move</span>(t1);            <span class="comment">// 2</span></span><br><span class="line">t1=std::<span class="built_in">thread</span>(some_other_function);    <span class="comment">// 3</span></span><br><span class="line">std::thread t3;                            <span class="comment">// 4</span></span><br><span class="line">t3=std::<span class="built_in">move</span>(t2);                        <span class="comment">// 5</span></span><br><span class="line">t1=std::<span class="built_in">move</span>(t3);                        <span class="comment">// 6 赋值操作将使程序崩溃</span></span><br></pre></td></tr></table></figure>
+
+<p>为了确保线程程序退出前完成，下面的代码里定义了 <code>scoped_thread</code>类。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">scoped_thread</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  std::thread t;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">explicit</span> <span class="title">scoped_thread</span><span class="params">(std::thread t_)</span>:                 // <span class="number">1</span></span></span><br><span class="line"><span class="function">    t(std::move(t_))</span></span><br><span class="line"><span class="function">  &#123;</span></span><br><span class="line">    <span class="keyword">if</span>(!t.<span class="built_in">joinable</span>())                                     <span class="comment">// 2</span></span><br><span class="line">      <span class="keyword">throw</span> std::<span class="built_in">logic_error</span>(“No thread”);</span><br><span class="line">  &#125;</span><br><span class="line">  ~<span class="built_in">scoped_thread</span>()</span><br><span class="line">  &#123;</span><br><span class="line">    t.<span class="built_in">join</span>();                                            <span class="comment">// 3</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">scoped_thread</span>(scoped_thread <span class="keyword">const</span>&amp;)=<span class="keyword">delete</span>;</span><br><span class="line">  scoped_thread&amp; <span class="keyword">operator</span>=(scoped_thread <span class="keyword">const</span>&amp;)=<span class="keyword">delete</span>;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">func</span>;</span> </span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> some_local_state;</span><br><span class="line">  <span class="function">scoped_thread <span class="title">t</span><span class="params">(std::thread(func(some_local_state)))</span></span>;    <span class="comment">// 4</span></span><br><span class="line">  <span class="built_in">do_something_in_current_thread</span>();</span><br><span class="line">&#125;                                                        <span class="comment">// 5</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="决定线程数量"><a href="#决定线程数量" class="headerlink" title="决定线程数量"></a>决定线程数量</h3><h3 id="线程标识"><a href="#线程标识" class="headerlink" title="线程标识"></a>线程标识</h3><p>线程标识类型为 <code>std::thread::id</code>，并可以通过两种方式进行检索。第一种，可以通过调用 <code>std::thread</code> 对象的成员函数 <code>get_id()</code> 来直接获取。如果 <code>std::thread</code> 对象没有与任何执行线程相关联，<code>get_id()</code> 将返回 <code>std::thread::type</code> 默认构造值，这个值表示“无线程”。第二种，当前线程中调用 <code>std::this_thread::get_id()</code> (这个函数定义在<thread>头文件中)也可以获得线程标识。</p>
+<p><code>std::thread::id</code> 对象可以自由的拷贝和对比,因为标识符就可以复用。如果两个对象的 <code>std::thread::id</code> 相等，那它们就是同一个线程，或者都“无线程”。如果不等，那么就代表了两个不同线程，或者一个有线程，另一没有线程。</p>
+<p>这意味着允许程序员将其当做为容器的键值，做排序，或做其他方式的比较。</p>
+<p>也可以使用输出流( <code>std::cout</code> )来记录一个 <code>std::thread::id</code> 对象的值。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::cout&lt;&lt;std::this_thread::<span class="built_in">get_id</span>();</span><br></pre></td></tr></table></figure>
+
+<p>具体的输出结果是严格依赖于具体实现的，C++标准的唯一要求就是要保证ID比较结果相等的线程，必须有相同的输出。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/10/29/cpp-effective/" rel="prev" title="Effective C++ 笔记">
+      <i class="fa fa-chevron-left"></i> Effective C++ 笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/01/C-%E5%B9%B6%E5%8F%91%E4%BA%8C-%E7%BA%BF%E7%A8%8B%E9%97%B4%E5%85%B1%E4%BA%AB%E6%95%B0%E6%8D%AE/" rel="next" title="C++ 并发二 线程间共享数据">
+      C++ 并发二 线程间共享数据 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">线程管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86%E7%9A%84%E5%9F%BA%E7%A1%80"><span class="nav-number">1.1.</span> <span class="nav-text">线程管理的基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BA%BF%E7%A8%8B%E7%AD%89%E5%BE%85"><span class="nav-number">1.1.1.</span> <span class="nav-text">线程等待</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BA%BF%E7%A8%8B%E5%88%86%E7%A6%BB"><span class="nav-number">1.1.2.</span> <span class="nav-text">线程分离</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#std-thread-%E6%9E%90%E6%9E%84"><span class="nav-number">1.1.3.</span> <span class="nav-text">std::thread 析构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%A0%E9%80%92%E7%BA%BF%E7%A8%8B%E5%8F%82%E6%95%B0"><span class="nav-number">1.2.</span> <span class="nav-text">传递线程参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#std-thread-%E7%A7%BB%E5%8A%A8"><span class="nav-number">1.3.</span> <span class="nav-text">std::thread 移动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%B3%E5%AE%9A%E7%BA%BF%E7%A8%8B%E6%95%B0%E9%87%8F"><span class="nav-number">1.4.</span> <span class="nav-text">决定线程数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%BF%E7%A8%8B%E6%A0%87%E8%AF%86"><span class="nav-number">1.5.</span> <span class="nav-text">线程标识</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">qiforan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">qiforan</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+    <!-- 代码块复制功能 -->
+</body>
+</html>
